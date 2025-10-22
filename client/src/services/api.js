@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/projects';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 
 export const saveProject = async (projectId, projectName, files) => {
   try {
