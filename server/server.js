@@ -4,12 +4,15 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const Project = require('./models/Project');
 
+
 dotenv.config();
 const app = express();
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
+
+
 
 // Connect to MongoDB Atlas
 mongoose.connect(process.env.MONGODB_URI, {
