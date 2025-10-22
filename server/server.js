@@ -4,21 +4,16 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const Project = require('./models/Project');
 
-
 dotenv.config();
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(cors()); // For production, later restrict to frontend domain
 app.use(express.json());
 
-
-
 // Connect to MongoDB Atlas
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => console.log('🔥 MongoDB Connected!'))
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('🔥 MongoDB Connected!'))
   .catch(err => console.error('❌ MongoDB Error:', err));
 
 // Routes
@@ -52,6 +47,9 @@ app.get('/api/projects/:projectId', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Health check endpoint (optional, good for Render monitoring)
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // Start server
 const PORT = process.env.PORT || 5000;

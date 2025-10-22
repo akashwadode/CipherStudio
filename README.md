@@ -110,4 +110,9 @@ Commit changes: git commit -m "Add feature".
 Push: git push origin feature/your-feature.
 Open a pull request.
 
+License
+MIT License.
+Acknowledgments
 
+Powered by Sandpack.
+Inspired by online IDEs like CodePen.
