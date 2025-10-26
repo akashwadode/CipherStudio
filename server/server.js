@@ -7,75 +7,67 @@ const Project = require('./models/Project');
 dotenv.config();
 const app = express();
 
-// ====== MIDDLEWARES ======
+// ✅ CORS Configuration
+const allowedOrigins = [
+  'https://cozy-churros-0152e6.netlify.app', // your frontend domain
+  'http://localhost:5173', // optional: for local dev
+];
+
+app.use(cors({
+  origin: allowedOrigins,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
+app.options('*', cors()); // ✅ handle preflight requests
+
 app.use(express.json());
 
-// ✅ Allow your frontend domains (adjust if needed)
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173", // local dev
-      "https://cipherstudio-frontend.netlify.app", // 🔥 replace this with your deployed frontend URL
-    ],
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
-  })
-);
+// ✅ MongoDB connection
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+}).then(() => console.log('🔥 MongoDB Connected!'))
+  .catch((err) => console.error('❌ MongoDB Connection Error:', err));
 
-// ====== DATABASE CONNECTION ======
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log('🔥 MongoDB Connected!'))
-  .catch((err) => console.error('❌ MongoDB Error:', err));
-
-// ====== ROUTES ======
-
-// ✅ Root route (for Render test)
+// ✅ Routes
 app.get('/', (req, res) => {
-  res.send('🚀 CipherStudio Backend is live!');
+  res.send('🚀 CipherStudio Backend is Live!');
 });
 
-// ✅ Health check (for Render uptime monitor)
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
-
-// ✅ Create or update a project
 app.post('/api/projects', async (req, res) => {
   try {
-    const { projectId, projectName, files } = req.body || {};
-    if (!projectId || !files) {
-      return res
-        .status(400)
-        .json({ error: 'projectId and files are required' });
+    const { projectId, projectName, files } = req.body;
+    const existing = await Project.findOne({ projectId });
+
+    if (existing) {
+      existing.projectName = projectName;
+      existing.files = files;
+      await existing.save();
+      return res.json({ message: '✅ Project updated successfully' });
     }
 
-    const project = await Project.findOneAndUpdate(
-      { projectId },
-      { projectId, projectName, files },
-      { upsert: true, new: true }
-    );
-
-    res.json({ success: true, project });
+    const newProject = new Project({ projectId, projectName, files });
+    await newProject.save();
+    res.json({ message: '✅ Project saved successfully' });
   } catch (error) {
     console.error('❌ Save Error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: '❌ Failed to save project to DB' });
   }
 });
 
-// ✅ Get a project by ID
 app.get('/api/projects/:projectId', async (req, res) => {
   try {
-    const project = await Project.findOne({
-      projectId: req.params.projectId,
-    });
-    res.json(project || null);
+    const project = await Project.findOne({ projectId: req.params.projectId });
+    if (!project) return res.status(404).json({ error: '❌ Project not found' });
+    res.json(project);
   } catch (error) {
     console.error('❌ Load Error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: '❌ Failed to load project' });
   }
 });
 
-// ====== START SERVER ======
+// ✅ Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () =>
-  console.log(`🚀 Server running on port ${PORT}`)
-);
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
